@@ -1,6 +1,7 @@
 import { getAccess } from '@/lib/access';
 import { createClient } from '@/lib/supabase/server';
 import HeroSection from '@/components/HeroSection';
+import StreamingLinks from '@/components/StreamingLinks';
 import SectionHeader from '@/components/SectionHeader';
 import EmptyState from '@/components/EmptyState';
 import AlbumCard from '@/components/AlbumCard';
@@ -63,6 +64,8 @@ export default async function Home({
       )}
 
       <HeroSection showJoinCTA={showJoinCTA} />
+
+      <StreamingLinks />
 
       <SectionHeader title="New Albums" subtitle="Latest full-length releases" count={newAlbums.length} />
       {newAlbums.length > 0 ? (
