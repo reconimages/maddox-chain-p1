@@ -1,0 +1,123 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { usePlayer } from "@/lib/player-context";
+import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+
+function fmt(s: number) {
+  if (!isFinite(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = String(Math.floor(s % 60)).padStart(2, "0");
+  return `${m}:${sec}`;
+}
+
+export default function PlayerBar() {
+  const { currentTrack, isPlaying, setIsPlaying, currentTime, setCurrentTime, duration, setDuration } =
+    usePlayer();
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [volume, setVolume] = useState(0.8);
+  const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = muted ? 0 : volume;
+  }, [volume, muted]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
+    audio.src = `/api/audio/${currentTrack.id}`;
+    audio.load();
+    if (isPlaying) {
+      audio.play().catch(() => {});
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) audio.play().catch(() => {});
+    else audio.pause();
+  }, [isPlaying]);
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur">
+      <audio
+        ref={audioRef}
+        onTimeUpdate={(e) => setCurrentTime((e.target as HTMLAudioElement).currentTime)}
+        onLoadedMetadata={(e) => setDuration((e.target as HTMLAudioElement).duration)}
+        onEnded={() => setIsPlaying(false)}
+      />
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-muted">
+          {currentTrack ? (
+            <img
+              src={`/api/covers/${currentTrack.albumId}`}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : null}
+        </div>
+        <div className="min-w-0 flex-1">
+          {currentTrack ? (
+            <>
+              <p className="truncate text-sm font-medium">{currentTrack.title}</p>
+              <p className="truncate text-xs text-muted-foreground">{currentTrack.albumTitle}</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">Nothing playing</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => currentTrack && setIsPlaying(!isPlaying)}
+            disabled={!currentTrack}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+        </div>
+        <div className="hidden w-48 items-center gap-2 sm:flex">
+          <span className="text-xs text-muted-foreground">{fmt(currentTime)}</span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={currentTime}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setCurrentTime(v);
+              if (audioRef.current) audioRef.current.currentTime = v;
+            }}
+            className="flex-1"
+          />
+          <span className="text-xs text-muted-foreground">{fmt(duration)}</span>
+        </div>
+        <div className="hidden items-center gap-2 sm:flex">
+          <button
+            onClick={() => setMuted(!muted)}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={muted ? 0 : volume}
+            onChange={(e) => {
+              setVolume(Number(e.target.value));
+              setMuted(false);
+            }}
+            className="w-20"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

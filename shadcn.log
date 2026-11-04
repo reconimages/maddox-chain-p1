@@ -1,0 +1,18 @@
+- Checking registry.
+✔ Checking registry.
+- Installing dependencies.
+- Installing dependencies.
+
+
+Something went wrong. Please check the error below for more details.
+If the problem persists, please open an issue on GitHub.
+
+Command failed with exit code 4294967295: npm install --no-audit --no-fund -- cn sonner next-themes
+
+npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+You can also try a previous version to see if that works:
+npx shadcn@4.22.0 add button input label card dialog tabs sonner --overwrite
+
+
+N:\maddox-chain\phase1>

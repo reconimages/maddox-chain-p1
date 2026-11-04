@@ -1,0 +1,16 @@
+
+C:\Users\Waine\AppData\Local\Temp\opencode\uk-brief>''
+'''' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\Waine\AppData\Local\Temp\opencode\uk-brief>gh auth login --hostname github.com --git-protocol https --web 
+
+! One-time code (66D5-CD60) copied to clipboard
+Open this URL to continue in your web browser: https://github.com/login/device
+✓ Authentication complete.
+- gh config set -h github.com git_protocol https
+✓ Configured git protocol
+✓ Logged in as reconimages
+! You were already logged in to this account
+
+C:\Users\Waine\AppData\Local\Temp\opencode\uk-brief>
