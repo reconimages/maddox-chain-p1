@@ -31,13 +31,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: parsed.error.message }, { status: 400 });
     }
     const { albumId, mode, title, year, coverPath, tracks } = parsed.data;
+    const isSingle = mode === "Single";
 
     const supabase = createAdminClient();
     const finalTitle = title;
 
     const { data: albumRow, error: albumErr } = await supabase
       .from("albums")
-      .insert({ id: albumId, title: finalTitle, release_year: year, cover_path: coverPath ?? null })
+      .insert({ id: albumId, title: finalTitle, release_year: year, cover_path: coverPath ?? null, is_single: isSingle })
       .select()
       .single();
     if (albumErr) {

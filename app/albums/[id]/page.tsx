@@ -40,7 +40,9 @@ export default async function AlbumPage({
           />
         </div>
         <div className="flex flex-col justify-end">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Album</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            {album.is_single ? "Single" : "Album"}
+          </p>
           <h1 className="text-3xl font-bold">{album.title}</h1>
           <p className="text-sm text-muted-foreground">
             {album.release_year} · {(tracks || []).length} tracks · {mm}:{ss}

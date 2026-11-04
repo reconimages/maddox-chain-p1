@@ -23,11 +23,18 @@ export default function Sidebar({
         Home
       </Link>
       <Link
-        href="/"
+        href="/albums"
         className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
         onClick={() => setOpen(false)}
       >
         Albums
+      </Link>
+      <Link
+        href="/singles"
+        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
+        onClick={() => setOpen(false)}
+      >
+        Singles
       </Link>
       {isAdmin && (
         <Link
