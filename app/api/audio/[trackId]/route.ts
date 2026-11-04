@@ -11,12 +11,16 @@ export async function GET(
   const supabase = await createClient();
   const { data: track, error } = await supabase
     .from("tracks")
-    .select("storage_path")
+    .select("storage_path, is_vault")
     .eq("id", trackId)
     .single();
 
   if (error || !track) {
     return new NextResponse("Not found", { status: 404 });
+  }
+
+  if (track.is_vault && !access.hasFullAccess) {
+    return NextResponse.json({ error: "Vault tracks require an active subscription." }, { status: 403 });
   }
 
   const expiry = access.hasFullAccess ? 3600 : 40;

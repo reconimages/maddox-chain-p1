@@ -22,6 +22,7 @@ type Track = {
   duration_seconds: number;
   storage_path: string;
   album_id: string;
+  is_vault: boolean;
   albums: { id: string; title: string } | null;
 };
 
@@ -44,6 +45,7 @@ export default function TracksTable({
   const [albumFilter, setAlbumFilter] = useState(selectedAlbum);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'album' | 'title' | 'duration'>('album');
+  const [vaultFilter, setVaultFilter] = useState<'all' | 'public' | 'vault'>('all');
   const [deleteTarget, setDeleteTarget] = useState<Track | null>(null);
   const [deleteInfo, setDeleteInfo] = useState<{ playlist_refs: number; like_refs: number } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -51,10 +53,12 @@ export default function TracksTable({
   const filtered = useMemo(() => {
     let r = tracks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()));
     if (albumFilter) r = r.filter((t) => t.album_id === albumFilter);
+    if (vaultFilter === 'public') r = r.filter((t) => !t.is_vault);
+    if (vaultFilter === 'vault') r = r.filter((t) => t.is_vault);
     if (sort === 'title') r = [...r].sort((a, b) => a.title.localeCompare(b.title));
     if (sort === 'duration') r = [...r].sort((a, b) => b.duration_seconds - a.duration_seconds);
     return r;
-  }, [tracks, search, albumFilter, sort]);
+  }, [tracks, search, albumFilter, vaultFilter, sort]);
 
   async function openDelete(track: Track) {
     const res = await fetch(`/api/admin/tracks/${track.id}?dry_run=1`);
@@ -117,6 +121,15 @@ export default function TracksTable({
           className="max-w-xs"
         />
         <select
+          value={vaultFilter}
+          onChange={(e) => setVaultFilter(e.target.value as any)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">All categories</option>
+          <option value="public">Public</option>
+          <option value="vault">Vault</option>
+        </select>
+        <select
           value={sort}
           onChange={(e) => setSort(e.target.value as any)}
           className="rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -154,7 +167,14 @@ export default function TracksTable({
                     </Link>
                   </td>
                   <td className="py-2">{t.track_number}</td>
-                  <td className="py-2">{t.title}</td>
+                  <td className="py-2">
+                    {t.title}
+                    {t.is_vault && (
+                      <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-bold text-amber-500">
+                        VAULT
+                      </span>
+                    )}
+                  </td>
                   <td className="py-2">{fmtDur(t.duration_seconds)}</td>
                   <td className="py-2">
                     <DropdownMenu>

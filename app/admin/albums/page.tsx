@@ -22,23 +22,30 @@ export default async function AdminAlbumsPage() {
   // fetch track counts + durations per album
   const { data: tracks } = await supabase
     .from('tracks')
-    .select('album_id, duration_seconds');
+    .select('album_id, duration_seconds, is_vault');
   const counts: Record<string, number> = {};
   const durations: Record<string, number> = {};
+  const vaultCounts: Record<string, number> = {};
   (tracks || []).forEach((t: any) => {
     counts[t.album_id] = (counts[t.album_id] || 0) + 1;
     durations[t.album_id] = (durations[t.album_id] || 0) + (t.duration_seconds || 0);
+    if (t.is_vault) vaultCounts[t.album_id] = (vaultCounts[t.album_id] || 0) + 1;
   });
 
-  const enriched = (albums || []).map((a: any) => ({
-    id: a.id,
-    title: a.title,
-    release_year: a.release_year,
-    cover_path: a.cover_path,
-    created_at: a.created_at,
-    track_count: counts[a.id] || 0,
-    total_duration: durations[a.id] || 0,
-  }));
+  const enriched = (albums || []).map((a: any) => {
+    const tc = counts[a.id] || 0;
+    const vc = vaultCounts[a.id] || 0;
+    return {
+      id: a.id,
+      title: a.title,
+      release_year: a.release_year,
+      cover_path: a.cover_path,
+      created_at: a.created_at,
+      track_count: tc,
+      total_duration: durations[a.id] || 0,
+      is_vault: tc > 0 && vc === tc,
+    };
+  });
 
   return (
     <div>

@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
+import { getAccess } from '@/lib/access';
 import { createServerSupabase } from '@/lib/auth';
 import { moveTrack, removeTrackFromPlaylist } from '@/lib/actions/library';
 import { ChevronUp, ChevronDown, X } from 'lucide-react';
@@ -17,6 +18,7 @@ export default async function PlaylistDetailPage({
   const { id } = await params;
   const user = await getSessionUser();
   if (!user) redirect(`/auth/login?next=/playlists/${id}`);
+  const access = await getAccess();
 
   const supabase = await createServerSupabase();
   const { data: playlist } = await supabase
@@ -53,7 +55,9 @@ export default async function PlaylistDetailPage({
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false });
 
-  const tracks = rows.map((r: any) => r.tracks).filter(Boolean);
+  const allTracks = rows.map((r: any) => r.tracks).filter(Boolean);
+  const hiddenVaultCount = allTracks.filter((t: any) => t.is_vault && !access.hasFullAccess).length;
+  const tracks = access.hasFullAccess ? allTracks : allTracks.filter((t: any) => !t.is_vault);
   const totalSeconds = tracks.reduce((s: number, t: any) => s + (t.duration_seconds || 0), 0);
   const mm = Math.floor(totalSeconds / 60);
   const ss = String(totalSeconds % 60).padStart(2, '0');
@@ -70,6 +74,12 @@ export default async function PlaylistDetailPage({
         <DeletePlaylistButton playlistId={playlist.id} name={playlist.name} />
       </div>
 
+      {hiddenVaultCount > 0 && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          {hiddenVaultCount} vault track(s) are hidden because your subscription is inactive.{' '}
+          <a href="/subscribe" className="text-primary underline">Resubscribe</a>
+        </p>
+      )}
       {tracks.length === 0 ? (
         <p className="text-muted-foreground">
           This playlist is empty. Add tracks from the home page or your liked songs.

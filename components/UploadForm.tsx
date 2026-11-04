@@ -90,7 +90,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function UploadForm() {
   const router = useRouter();
-  const [mode, setMode] = useState<"Album" | "Single">("Album");
+  const [mode, setMode] = useState<"Album" | "Single" | "Vault">("Album");
   const [title, setTitle] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [cover, setCover] = useState<File | null>(null);
@@ -177,7 +177,7 @@ export default function UploadForm() {
       );
 
       // 3. Upload audio files directly to Supabase (auto-resumable for large files)
-      const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string }[] = [];
+      const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string; is_vault: boolean }[] = [];
       for (let i = 0; i < audio.length; i++) {
         const f = audio[i];
         const a = init.audio[i];
@@ -189,7 +189,7 @@ export default function UploadForm() {
             upsert: true,
           });
         if (error) throw new Error(error.message);
-        tracks.push({ title: a.title, track_number: a.track_number, duration_seconds: durations[i] || 0, storage_path: a.path });
+        tracks.push({ title: a.title, track_number: a.track_number, duration_seconds: durations[i] || 0, storage_path: a.path, is_vault: mode === "Vault" });
       }
 
       // 4. Finish: insert DB rows
@@ -234,11 +234,12 @@ export default function UploadForm() {
           <TabsList>
             <TabsTrigger value="Album">Album</TabsTrigger>
             <TabsTrigger value="Single">Single</TabsTrigger>
+            <TabsTrigger value="Vault">Vault</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="title">{mode === "Album" ? "Album title" : "Track title"}</Label>
+        <Label htmlFor="title">{mode === "Single" ? "Track title" : "Album title"}</Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </div>
       <div className="space-y-2">

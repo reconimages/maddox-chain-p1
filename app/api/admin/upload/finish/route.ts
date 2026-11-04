@@ -16,6 +16,7 @@ const bodySchema = z.object({
       track_number: z.number().int(),
       duration_seconds: z.number().int().optional(),
       storage_path: z.string().min(1),
+      is_vault: z.boolean().optional(),
     })
   ).min(1),
 });
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
       track_number: t.track_number,
       duration_seconds: t.duration_seconds ?? 0,
       storage_path: t.storage_path,
+      is_vault: t.is_vault ?? false,
     }));
     const { error: tracksErr } = await supabase.from("tracks").insert(rows);
     if (tracksErr) {

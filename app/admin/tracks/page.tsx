@@ -21,7 +21,7 @@ export default async function AdminTracksPage({
 
   let query = supabase
     .from('tracks')
-    .select('id, title, track_number, duration_seconds, storage_path, album_id, albums(id, title)')
+    .select('id, title, track_number, duration_seconds, storage_path, album_id, is_vault, albums(id, title)')
     .order('track_number', { ascending: true });
   if (album) query = query.eq('album_id', album);
 
@@ -35,6 +35,7 @@ export default async function AdminTracksPage({
     duration_seconds: t.duration_seconds,
     storage_path: t.storage_path,
     album_id: t.album_id,
+    is_vault: t.is_vault ?? false,
     albums: Array.isArray(t.albums) ? t.albums[0] ?? null : t.albums,
   }));
 

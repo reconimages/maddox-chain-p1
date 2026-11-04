@@ -23,7 +23,10 @@ export default async function AlbumPage({
     .from("tracks")
     .select("*")
     .eq("album_id", id)
+    .eq("is_vault", false)
     .order("track_number", { ascending: true });
+
+  if (!tracks || tracks.length === 0) notFound();
 
   const user = await getSessionUser();
   const isSignedIn = !!user;

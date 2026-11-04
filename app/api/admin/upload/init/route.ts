@@ -32,7 +32,7 @@ function trackNumberFromFilename(name: string, fallback: number) {
 }
 
 const bodySchema = z.object({
-  mode: z.enum(["Album", "Single"]),
+  mode: z.enum(["Album", "Single", "Vault"]),
   title: z.string().min(1),
   year: z.coerce.number().int().min(1900).max(2100),
   coverName: z.string().nullable().optional(),
@@ -73,8 +73,9 @@ export async function POST(req: Request) {
       const tn = trackNumberFromFilename(name, i + 1);
       const ttitle = mode === "Single" ? title : trackTitleFromFilename(name);
       const ext = extOf(name);
-      const spath = `audio/${albumId}/${String(tn).padStart(2, "0")}-${slug(ttitle)}.${ext}`;
-      return { name, title: ttitle, track_number: tn, path: spath };
+      const prefix = mode === 'Vault' ? 'vault-audio' : 'audio';
+      const spath = `${prefix}/${albumId}/${String(tn).padStart(2, "0")}-${slug(ttitle)}.${ext}`;
+      return { name, title: ttitle, track_number: tn, path: spath, is_vault: mode === 'Vault' };
     });
 
     return NextResponse.json({

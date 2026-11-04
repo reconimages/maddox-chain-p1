@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Heart, ListMusic } from "lucide-react";
+import { Menu, X, Heart, ListMusic, Lock, Unlock } from "lucide-react";
 
 export default function Sidebar({
   email,
@@ -39,6 +39,13 @@ export default function Sidebar({
         onClick={() => setOpen(false)}
       >
         Singles
+      </Link>
+      <Link
+        href="/vault"
+        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+        onClick={() => setOpen(false)}
+      >
+        {hasFullAccess ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />} VIP Vault
       </Link>
       {email && (
         <>

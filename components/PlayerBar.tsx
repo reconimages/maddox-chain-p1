@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePlayer } from "@/lib/player-context";
+import { toast } from "sonner";
 import { Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Shuffle, Repeat, Repeat1 } from "lucide-react";
 
 function fmt(s: number) {
@@ -78,6 +79,18 @@ export default function PlayerBar() {
             }
           }}
           onLoadedMetadata={(e) => setDuration((e.target as HTMLAudioElement).duration)}
+          onError={() => {
+            const audio = audioRef.current;
+            if (audio) {
+              audio.pause();
+              audio.removeAttribute('src');
+              audio.load();
+            }
+            setIsPlaying(false);
+            toast.error('This track requires an active VIP subscription.', {
+              action: { label: 'Upgrade', onClick: () => { window.location.href = '/subscribe'; } },
+            });
+          }}
           onEnded={handleEnded}
         />
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">

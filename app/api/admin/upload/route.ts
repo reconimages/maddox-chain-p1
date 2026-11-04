@@ -36,7 +36,7 @@ function trackNumberFromFilename(name: string, fallback: number) {
 }
 
 const bodySchema = z.object({
-  mode: z.enum(["Album", "Single"]),
+  mode: z.enum(["Album", "Single", "Vault"]),
   title: z.string().min(1),
   year: z.coerce.number().int().min(1900).max(2100),
 });
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
         uploadedCover = cpath;
       }
 
-      const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string }[] = [];
+      const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string; is_vault: boolean }[] = [];
       for (let i = 0; i < audioFiles.length; i++) {
         const f = audioFiles[i];
         const buf = Buffer.from(await f.arrayBuffer());
@@ -115,13 +115,14 @@ export async function POST(req: Request) {
         const tn = trackNumberFromFilename(f.name, i + 1);
         const ttitle = m === "Single" && title ? String(title) : trackTitleFromFilename(f.name);
         const ext = extOf(f.name);
-        const spath = `audio/${albumId}/${String(tn).padStart(2, "0")}-${slug(ttitle)}.${ext}`;
+        const prefix = m === "Vault" ? "vault-audio" : "audio";
+        const spath = `${prefix}/${albumId}/${String(tn).padStart(2, "0")}-${slug(ttitle)}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("audio")
           .upload(spath, buf, { contentType: f.type || "audio/mpeg", upsert: true });
         if (upErr) throw new Error(upErr.message);
         uploadedAudio.push(spath);
-        tracks.push({ title: ttitle, track_number: tn, duration_seconds: duration, storage_path: spath });
+        tracks.push({ title: ttitle, track_number: tn, duration_seconds: duration, storage_path: spath, is_vault: m === "Vault" });
       }
 
       const finalAlbumTitle = m === "Single" ? String(title) : albumTitle;
@@ -139,6 +140,7 @@ export async function POST(req: Request) {
         track_number: t.track_number,
         duration_seconds: t.duration_seconds,
         storage_path: t.storage_path,
+        is_vault: t.is_vault ?? false,
       }));
       const { error: tracksErr } = await supabase.from("tracks").insert(rows);
       if (tracksErr) throw new Error(tracksErr.message);

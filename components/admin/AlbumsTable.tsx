@@ -23,6 +23,7 @@ type Row = {
   created_at: string;
   track_count: number;
   total_duration: number;
+  is_vault: boolean;
 };
 
 function fmtDur(sec: number) {
@@ -35,6 +36,7 @@ export default function AlbumsTable({ rows }: { rows: Row[] }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'albums' | 'singles'>('all');
+  const [vaultFilter, setVaultFilter] = useState<'all' | 'public' | 'vault'>('all');
   const [sort, setSort] = useState<'newest' | 'oldest' | 'title' | 'tracks'>('newest');
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
   const [deleteInfo, setDeleteInfo] = useState<{ playlist_refs: number; like_refs: number } | null>(null);
@@ -46,12 +48,14 @@ export default function AlbumsTable({ rows }: { rows: Row[] }) {
     );
     if (filter === 'albums') r = r.filter((row) => row.track_count >= 2);
     if (filter === 'singles') r = r.filter((row) => row.track_count === 1);
+    if (vaultFilter === 'public') r = r.filter((row) => !row.is_vault);
+    if (vaultFilter === 'vault') r = r.filter((row) => row.is_vault);
     if (sort === 'newest') r = [...r].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
     if (sort === 'oldest') r = [...r].sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
     if (sort === 'title') r = [...r].sort((a, b) => a.title.localeCompare(b.title));
     if (sort === 'tracks') r = [...r].sort((a, b) => b.track_count - a.track_count);
     return r;
-  }, [rows, search, filter, sort]);
+  }, [rows, search, filter, vaultFilter, sort]);
 
   async function openDelete(row: Row) {
     // dry run: get impact counts
@@ -105,6 +109,15 @@ export default function AlbumsTable({ rows }: { rows: Row[] }) {
           <option value="singles">Singles</option>
         </select>
         <select
+          value={vaultFilter}
+          onChange={(e) => setVaultFilter(e.target.value as any)}
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">All categories</option>
+          <option value="public">Public</option>
+          <option value="vault">Vault</option>
+        </select>
+        <select
           value={sort}
           onChange={(e) => setSort(e.target.value as any)}
           className="rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -139,7 +152,14 @@ export default function AlbumsTable({ rows }: { rows: Row[] }) {
                   <td className="py-2">
                     <img src={`/api/covers/${row.id}`} alt="" className="h-10 w-10 rounded object-cover" />
                   </td>
-                  <td className="py-2">{row.title}</td>
+                  <td className="py-2">
+                    {row.title}
+                    {row.is_vault && (
+                      <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-bold text-amber-500">
+                        VAULT
+                      </span>
+                    )}
+                  </td>
                   <td className="py-2">{row.track_count === 1 ? 'Single' : 'Album'}</td>
                   <td className="py-2">{row.release_year}</td>
                   <td className="py-2">{row.track_count}</td>
