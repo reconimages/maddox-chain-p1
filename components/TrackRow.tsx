@@ -2,6 +2,7 @@
 
 import { Play } from 'lucide-react';
 import { ListPlus } from 'lucide-react';
+import ShareMenu from '@/components/ShareMenu';
 import { usePlayer } from '@/lib/player-context';
 import LikeButton from '@/components/LikeButton';
 import {
@@ -32,6 +33,7 @@ export default function TrackRow({
   playlists,
   rowActions,
   queue,
+  showShare = false,
 }: {
   track: Track;
   albumTitle: string;
@@ -41,6 +43,7 @@ export default function TrackRow({
   playlists?: Playlist[];
   rowActions?: React.ReactNode;
   queue?: { id: string; title: string; track_number: number; duration_seconds: number }[];
+  showShare?: boolean;
 }) {
   const { playTrack, playQueue, currentTrack, isPlaying } = usePlayer();
   const currentTrackId = currentTrack?.id ?? null;
@@ -107,6 +110,7 @@ export default function TrackRow({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+      {showShare && <ShareMenu kind="track" id={track.id} title={track.title} />}
       {rowActions && <div className="flex items-center gap-1">{rowActions}</div>}
     </div>
   );

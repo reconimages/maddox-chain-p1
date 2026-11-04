@@ -3,8 +3,30 @@ import { getAccess } from '@/lib/access';
 import { createClient } from '@/lib/supabase/server';
 import TrackRow from '@/components/TrackRow';
 import PlayAllButton from '@/components/PlayAllButton';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: album } = await supabase.from('albums').select('title').eq('id', id).single();
+  if (!album) return {};
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
+  return {
+    title: `${album.title} — Maddox Chain VIP Vault`,
+    description: 'VIP Vault exclusive content on Maddox Chain.',
+    robots: { index: false, follow: false },
+    openGraph: {
+      title: album.title,
+      description: 'VIP Vault exclusive content on Maddox Chain.',
+      type: 'music.album',
+      url: `${siteUrl}/vault/${id}`,
+      siteName: 'Maddox Chain',
+      images: [{ url: `${siteUrl}/api/og/album/${id}`, width: 1200, height: 630, alt: album.title }],
+    },
+  };
+}
 
 export default async function VaultAlbumPage({
   params,

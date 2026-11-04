@@ -1,9 +1,39 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth";
 import TrackRow from "@/components/TrackRow";
+import ShareMenu from "@/components/ShareMenu";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: album } = await supabase.from('albums').select('title, release_year').eq('id', id).single();
+  if (!album) return {};
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
+  const title = album.title;
+  const description = 'Listen to ' + title + ' by Maddox Chain.';
+  return {
+    title: title + ' — Maddox Chain',
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'music.album',
+      url: siteUrl + '/albums/' + id,
+      siteName: 'Maddox Chain',
+      images: [{ url: siteUrl + '/api/og/album/' + id, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [siteUrl + '/api/og/album/' + id],
+    },
+  };
+}
 
 export default async function AlbumPage({
   params,
@@ -75,7 +105,10 @@ export default async function AlbumPage({
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             {album.is_single ? "Single" : "Album"}
           </p>
-          <h1 className="text-3xl font-bold">{album.title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold">{album.title}</h1>
+            <ShareMenu kind="album" id={album.id} title={album.title} />
+          </div>
           <p className="text-sm text-muted-foreground">
             {album.release_year} · {(tracks || []).length} tracks · {mm}:{ss}
           </p>
@@ -98,6 +131,7 @@ export default async function AlbumPage({
             initialLiked={likedSet.has(t.id)}
             playlists={playlists}
             queue={tracks || []}
+            showShare={true}
           />
         ))}
       </div>
