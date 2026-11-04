@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
           <nav className="flex items-center gap-1 overflow-x-auto -mx-4 px-4">
             <Link href="/admin" className="rounded-md px-3 py-1.5 text-sm hover:bg-accent whitespace-nowrap">Overview</Link>
+            <Link href="/admin/stats" className="rounded-md px-3 py-1.5 text-sm hover:bg-accent whitespace-nowrap">Stats</Link>
             <Link href="/admin/upload" className="rounded-md px-3 py-1.5 text-sm hover:bg-accent whitespace-nowrap">Upload</Link>
             <Link href="/admin/albums" className="rounded-md px-3 py-1.5 text-sm hover:bg-accent whitespace-nowrap">Albums</Link>
             <Link href="/admin/tracks" className="rounded-md px-3 py-1.5 text-sm hover:bg-accent whitespace-nowrap">Tracks</Link>
