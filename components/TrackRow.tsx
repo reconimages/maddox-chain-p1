@@ -71,37 +71,42 @@ export default function TrackRow({
         </span>
         <Play className="h-4 w-4 text-muted-foreground" />
         <span className="flex-1 truncate text-sm">{track.title}</span>
+      </button>
+      {isSignedIn && (
+        <>
+          <LikeButton trackId={track.id} initialLiked={initialLiked} isSignedIn={isSignedIn} />
+          <span className="text-xs text-muted-foreground">
+            {mm}:{ss}
+          </span>
+        </>
+      )}
+      {!isSignedIn && (
         <span className="text-xs text-muted-foreground">
           {mm}:{ss}
         </span>
-      </button>
-      {isSignedIn && playlists ? (
-        <div className="flex items-center gap-1">
-          <LikeButton trackId={track.id} initialLiked={initialLiked} isSignedIn={isSignedIn} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ListPlus className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {playlists.length > 0 ? (
-                playlists.map((p) => (
-                  <DropdownMenuItem key={p.id} onClick={() => handleAdd(p.id, p.name)}>
-                    {p.name}
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <DropdownMenuItem asChild>
-                  <a href="/playlists" className="text-primary">Create a playlist first</a>
+      )}
+      {isSignedIn && playlists && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ListPlus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {playlists.length > 0 ? (
+              playlists.map((p) => (
+                <DropdownMenuItem key={p.id} onClick={() => handleAdd(p.id, p.name)}>
+                  {p.name}
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ) : isSignedIn ? (
-        <LikeButton trackId={track.id} initialLiked={initialLiked} isSignedIn={isSignedIn} />
-      ) : null}
+              ))
+            ) : (
+              <DropdownMenuItem asChild>
+                <a href="/playlists" className="text-primary">Create a playlist first</a>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       {rowActions && <div className="flex items-center gap-1">{rowActions}</div>}
     </div>
   );
