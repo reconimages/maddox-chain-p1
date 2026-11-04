@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePlayer } from "@/lib/player-context";
 import { toast } from "sonner";
+import { trackPlay } from "@/lib/play-tracker";
 import { Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Shuffle, Repeat, Repeat1 } from "lucide-react";
 
 function fmt(s: number) {
@@ -34,6 +35,7 @@ export default function PlayerBar() {
     if (isPlaying) {
       audio.play().catch(() => {});
     }
+    trackPlay(currentTrack.id);
   }, [currentTrack]);
 
   useEffect(() => {

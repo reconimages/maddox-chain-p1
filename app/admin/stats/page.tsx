@@ -7,6 +7,7 @@ import {
   getLikesAndPlaylistsStats,
   getAdminActivityStats,
   getVaultStats,
+  getPlayStats,
 } from '@/lib/admin-stats';
 import { CatalogSection } from '@/components/admin/stats/CatalogSection';
 import { UsersSection } from '@/components/admin/stats/UsersSection';
@@ -14,19 +15,21 @@ import { SubscriptionsSection } from '@/components/admin/stats/SubscriptionsSect
 import { LikesSection } from '@/components/admin/stats/LikesSection';
 import { ActivitySection } from '@/components/admin/stats/ActivitySection';
 import { VaultSection } from '@/components/admin/stats/VaultSection';
+import { PlaysSection } from '@/components/admin/stats/PlaysSection';
 
 export const dynamic = 'force-dynamic';
 
 export default async function StatsPage() {
   if (!(await isAdminRequest())) redirect('/admin/login');
 
-  const [catalog, users, subs, likes, activity, vault] = await Promise.all([
+  const [catalog, users, subs, likes, activity, vault, plays] = await Promise.all([
     getCatalogStats(),
     getUserStats(),
     getSubscriptionStats(),
     getLikesAndPlaylistsStats(),
     getAdminActivityStats(),
     getVaultStats(),
+    getPlayStats(),
   ]);
 
   return (
@@ -41,6 +44,7 @@ export default async function StatsPage() {
       <CatalogSection data={catalog} />
       <UsersSection data={users} />
       <SubscriptionsSection data={subs} />
+      <PlaysSection data={plays} />
       <LikesSection data={likes} />
       <ActivitySection data={activity} />
       <VaultSection data={vault} />

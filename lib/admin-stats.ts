@@ -199,6 +199,115 @@ export async function getAdminActivityStats() {
   };
 }
 
+export async function getPlayStats() {
+  const supabase = createAdminClient();
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Total counts
+  const { count: totalAllTime } = await supabase
+    .from('play_events')
+    .select('*', { count: 'exact', head: true });
+  const { count: total30 } = await supabase
+    .from('play_events')
+    .select('*', { count: 'exact', head: true })
+    .gte('played_at', thirtyDaysAgo);
+  const { count: total7 } = await supabase
+    .from('play_events')
+    .select('*', { count: 'exact', head: true })
+    .gte('played_at', sevenDaysAgo);
+
+  // Paid vs free
+  const { count: paidAllTime } = await supabase
+    .from('play_events')
+    .select('*', { count: 'exact', head: true })
+    .eq('was_paid', true);
+  const { count: freeAllTime } = await supabase
+    .from('play_events')
+    .select('*', { count: 'exact', head: true })
+    .eq('was_paid', false);
+
+  const paidPercent = (totalAllTime || 0) > 0
+    ? Math.round(((paidAllTime || 0) / (totalAllTime || 1)) * 1000) / 10
+    : 0;
+
+  // Per day for last 30 days
+  const { data: recentEvents } = await supabase
+    .from('play_events')
+    .select('played_at')
+    .gte('played_at', thirtyDaysAgo);
+
+  const perDayMap: Record<string, number> = {};
+  (recentEvents || []).forEach((e: any) => {
+    const date = new Date(e.played_at).toISOString().slice(0, 10);
+    perDayMap[date] = (perDayMap[date] || 0) + 1;
+  });
+  const perDay30 = Object.entries(perDayMap)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Top tracks
+  const { data: allEvents } = await supabase
+    .from('play_events')
+    .select('track_id, user_id, is_vault');
+
+  const trackCounts: Record<string, { plays: number; users: Set<string | null> }> = {};
+  (allEvents || []).forEach((e: any) => {
+    if (!trackCounts[e.track_id]) {
+      trackCounts[e.track_id] = { plays: 0, users: new Set() };
+    }
+    trackCounts[e.track_id].plays++;
+    if (e.user_id) trackCounts[e.track_id].users.add(e.user_id);
+  });
+
+  // Fetch track details
+  const trackIds = Object.keys(trackCounts);
+  let trackDetails: Record<string, { title: string; album_title: string; is_vault: boolean }> = {};
+  if (trackIds.length > 0) {
+    const { data: tracks } = await supabase
+      .from('tracks')
+      .select('id, title, is_vault, album_id, albums(title)')
+      .in('id', trackIds);
+    (tracks || []).forEach((t: any) => {
+      trackDetails[t.id] = { title: t.title, album_title: t.albums?.title || '', is_vault: t.is_vault };
+    });
+  }
+
+  const topTracks = Object.entries(trackCounts)
+    .map(([id, v]) => ({
+      id,
+      title: trackDetails[id]?.title || 'Unknown',
+      album_title: trackDetails[id]?.album_title || '',
+      is_vault: trackDetails[id]?.is_vault || false,
+      plays: v.plays,
+      unique_listeners: v.users.size,
+    }))
+    .sort((a, b) => b.plays - a.plays)
+    .slice(0, 20);
+
+  const topVaultTracks = topTracks.filter((t) => t.is_vault).slice(0, 10);
+
+  // By user type
+  const anonymous = (allEvents || []).filter((e: any) => e.user_id === null).length;
+  const signedInFree = (allEvents || []).filter((e: any) => e.user_id !== null && !e.was_paid).length;
+  const paid = (allEvents || []).filter((e: any) => e.was_paid).length;
+
+  return {
+    totalAllTime: totalAllTime || 0,
+    total30: total30 || 0,
+    total7: total7 || 0,
+    paidAllTime: paidAllTime || 0,
+    freeAllTime: freeAllTime || 0,
+    paidPercent,
+    perDay30,
+    topTracks,
+    topVaultTracks,
+    byUserType: { anonymous, signed_in_free: signedInFree, paid },
+  };
+}
+
 export async function getVaultStats() {
   const supabase = createAdminClient();
 
