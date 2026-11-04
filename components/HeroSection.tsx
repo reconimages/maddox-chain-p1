@@ -1,6 +1,6 @@
 export default function HeroSection({ showJoinCTA }: { showJoinCTA: boolean }) {
   return (
-    <div className="py-8 md:py-12 max-w-[720px]">
+    <div className="py-4 md:py-8 max-w-[720px]">
       <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight bg-gradient-to-r from-red-500 via-orange-400 to-amber-300 bg-clip-text text-transparent">
         MADDOX CHAIN
       </h1>

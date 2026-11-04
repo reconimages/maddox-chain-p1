@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               hasFullAccess={access.hasFullAccess}
               status={access.status}
             />
-            <main className="flex-1 pb-24 pt-16 md:pt-0">{children}</main>
+            <main className="flex-1 pb-24 pt-12 md:pt-0">{children}</main>
           </div>
           <PlayerBar />
           <Toaster />
