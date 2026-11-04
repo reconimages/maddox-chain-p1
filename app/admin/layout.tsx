@@ -5,9 +5,13 @@ import Link from 'next/link';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const h = await headers();
-  const path = h.get('x-invoke-path') || h.get('next-url') || '';
-  const isLoginPage = path === '/admin/login' || path.endsWith('/admin/login');
-  if (!isLoginPage && !(await isAdminRequest())) redirect('/admin/login');
+  const isAdminPage = h.get('x-admin-page') !== 'login';
+
+  if (!isAdminPage) {
+    return <>{children}</>;
+  }
+
+  if (!(await isAdminRequest())) redirect('/admin/login');
 
   return (
     <div className="min-h-screen bg-background text-foreground">
