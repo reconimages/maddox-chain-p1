@@ -86,20 +86,6 @@ export default async function Home({
         <EmptyState message="No singles yet. Check back soon." />
       )}
 
-      <h2 id="catalog" className="text-xl md:text-2xl font-bold uppercase tracking-wide mt-16 scroll-mt-20 text-zinc-100">
-        Full Catalog
-      </h2>
-      <p className="text-sm text-zinc-500 mt-1 mb-4">Every public release, newest first.</p>
-      {publicAlbums.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          {publicAlbums.map((a) => (
-            <AlbumCard key={a.id} album={{ id: a.id, title: a.title, release_year: a.release_year }} />
-          ))}
-        </div>
-      ) : (
-        <EmptyState message="The catalog is empty. Check back soon." />
-      )}
-
       {vaultAlbums.length > 0 && (
         <section className="mt-12">
           <SectionHeader title="VIP Vault" subtitle="Unreleased tracks. Subscribers only." count={vaultAlbums.length} />

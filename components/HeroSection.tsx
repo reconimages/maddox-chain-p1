@@ -24,7 +24,7 @@ export default function HeroSection({ showJoinCTA }: { showJoinCTA: boolean }) {
           </a>
         )}
         <a
-          href="#catalog"
+          href="/catalog"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-zinc-700 text-zinc-200 font-semibold text-sm hover:bg-zinc-900 transition"
         >
           Explore the catalog
