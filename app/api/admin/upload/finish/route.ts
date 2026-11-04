@@ -13,6 +13,7 @@ const bodySchema = z.object({
     z.object({
       title: z.string().min(1),
       track_number: z.number().int(),
+      duration_seconds: z.number().int().optional(),
       storage_path: z.string().min(1),
     })
   ).min(1),
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       album_id: albumRow.id,
       title: t.title,
       track_number: t.track_number,
-      duration_seconds: 0,
+      duration_seconds: t.duration_seconds ?? 0,
       storage_path: t.storage_path,
     }));
     const { error: tracksErr } = await supabase.from("tracks").insert(rows);

@@ -1,6 +1,24 @@
 "use client";
 
 import { useRef, useState } from "react";
+
+function getAudioDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const audio = document.createElement("audio");
+    audio.preload = "metadata";
+    const url = URL.createObjectURL(file);
+    audio.onloadedmetadata = () => {
+      const d = isFinite(audio.duration) ? Math.round(audio.duration) : 0;
+      URL.revokeObjectURL(url);
+      resolve(d);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(0);
+    };
+    audio.src = url;
+  });
+}
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,8 +85,13 @@ export default function UploadForm() {
         coverPath = init.cover.path;
       }
 
+      // Compute durations client-side from the audio files
+      const durations: number[] = await Promise.all(
+        audio.map((f) => getAudioDuration(f))
+      );
+
       // 3. Upload audio files directly to Supabase
-      const tracks: { title: string; track_number: number; storage_path: string }[] = [];
+      const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string }[] = [];
       for (let i = 0; i < audio.length; i++) {
         const f = audio[i];
         const a = init.audio[i];
@@ -80,7 +103,7 @@ export default function UploadForm() {
             upsert: true,
           });
         if (error) throw new Error(error.message);
-        tracks.push({ title: a.title, track_number: a.track_number, storage_path: a.path });
+        tracks.push({ title: a.title, track_number: a.track_number, duration_seconds: durations[i] || 0, storage_path: a.path });
       }
 
       // 4. Finish: insert DB rows
