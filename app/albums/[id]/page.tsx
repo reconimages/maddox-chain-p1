@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth";
 import TrackRow from "@/components/TrackRow";
 import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function AlbumPage({
   params,
@@ -21,6 +24,32 @@ export default async function AlbumPage({
     .select("*")
     .eq("album_id", id)
     .order("track_number", { ascending: true });
+
+  const user = await getSessionUser();
+  const isSignedIn = !!user;
+
+  // liked set
+  const likedSet = new Set<string>();
+  const trackIds = (tracks || []).map((t: any) => t.id);
+  if (user && trackIds.length) {
+    const { data: likes } = await supabase
+      .from("liked_tracks")
+      .select("track_id")
+      .eq("user_id", user.id)
+      .in("track_id", trackIds);
+    (likes || []).forEach((l: any) => likedSet.add(l.track_id));
+  }
+
+  // playlists
+  let playlists: { id: string; name: string }[] = [];
+  if (user) {
+    const { data: pls } = await supabase
+      .from("playlists")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+    playlists = pls || [];
+  }
 
   const totalSeconds = (tracks || []).reduce(
     (s: number, t: any) => s + (t.duration_seconds || 0),
@@ -62,6 +91,9 @@ export default async function AlbumPage({
             }}
             albumTitle={album.title}
             albumId={album.id}
+            isSignedIn={isSignedIn}
+            initialLiked={likedSet.has(t.id)}
+            playlists={playlists}
             queue={tracks || []}
           />
         ))}
