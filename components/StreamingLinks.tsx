@@ -27,7 +27,7 @@ function SpotifyIcon() {
 
 export default function StreamingLinks() {
   return (
-    <section aria-label="Also streaming on" className="mt-12">
+    <section aria-label="Also streaming on" className="mt-4">
       <p className="text-xs uppercase tracking-widest text-zinc-500 mb-3">
         Also streaming on
       </p>
