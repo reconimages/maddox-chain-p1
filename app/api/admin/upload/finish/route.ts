@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/admin";
+import { logAdminEvent } from "@/lib/admin-log";
 
 const bodySchema = z.object({
   albumId: z.string().uuid(),
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: tracksErr.message }, { status: 500 });
     }
 
+    await logAdminEvent({ event_type: 'upload', album_id: albumId, metadata: { track_count: tracks.length, mode } });
     return NextResponse.json({ albumId: albumRow.id });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Finish failed" }, { status: 500 });

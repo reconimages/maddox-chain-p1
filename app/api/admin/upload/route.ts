@@ -3,6 +3,7 @@ import { z } from "zod";
 import { parseBuffer } from "music-metadata";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/admin";
+import { logAdminEvent } from "@/lib/admin-log";
 
 const ALLOWED_AUDIO = ["mp3", "wav", "m4a", "ogg", "flac"];
 const ALLOWED_COVER = ["jpg", "jpeg", "png", "webp"];
@@ -142,6 +143,7 @@ export async function POST(req: Request) {
       const { error: tracksErr } = await supabase.from("tracks").insert(rows);
       if (tracksErr) throw new Error(tracksErr.message);
 
+      await logAdminEvent({ event_type: 'upload', album_id: albumRow.id, metadata: { track_count: tracks.length, mode: m } });
       return NextResponse.json({ albumId: albumRow.id });
     } catch (e: any) {
       try {

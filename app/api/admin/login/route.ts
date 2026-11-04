@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { expectedAdminToken } from "@/lib/admin";
+import { expectedAdminToken, verifyAdminPassword } from "@/lib/admin";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const password = body?.password;
-  if (password !== process.env.ADMIN_PASSWORD) {
+  if (!(await verifyAdminPassword(password))) {
     await new Promise((r) => setTimeout(r, 500));
     return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
   }
