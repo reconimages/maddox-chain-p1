@@ -44,7 +44,7 @@ export default async function CatalogPage({
           accounts get 30-second previews of every track.
         </p>
       </div>
-      <CatalogView albums={albums} initialType={initialType} />
+      <CatalogView key={initialType} albums={albums} initialType={initialType} />
     </div>
   );
 }
