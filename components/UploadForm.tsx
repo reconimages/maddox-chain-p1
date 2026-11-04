@@ -2,17 +2,35 @@
 
 import { useRef, useState } from "react";
 
+function audioContentType(name: string, fallback: string): string {
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  const map: Record<string, string> = {
+    mp3: "audio/mpeg",
+    wav: "audio/wav",
+    m4a: "audio/mp4",
+    ogg: "audio/ogg",
+    flac: "audio/flac",
+  };
+  return map[ext] || fallback || "application/octet-stream";
+}
+
 function getAudioDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
     const url = URL.createObjectURL(file);
+    const timer = setTimeout(() => {
+      URL.revokeObjectURL(url);
+      resolve(0);
+    }, 8000);
     audio.onloadedmetadata = () => {
+      clearTimeout(timer);
       const d = isFinite(audio.duration) ? Math.round(audio.duration) : 0;
       URL.revokeObjectURL(url);
       resolve(d);
     };
     audio.onerror = () => {
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
       resolve(0);
     };
@@ -99,7 +117,7 @@ export default function UploadForm() {
         const { error } = await supabase.storage
           .from("audio")
           .uploadToSignedUrl(a.path, a.token, f, {
-            contentType: f.type || "audio/mpeg",
+            contentType: audioContentType(f.name, f.type),
             upsert: true,
           });
         if (error) throw new Error(error.message);
