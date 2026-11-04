@@ -7,9 +7,13 @@ import { Menu, X, Heart, ListMusic } from "lucide-react";
 export default function Sidebar({
   email,
   isAdmin,
+  hasFullAccess = true,
+  status = null,
 }: {
   email: string | null;
   isAdmin: boolean;
+  hasFullAccess?: boolean;
+  status?: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -69,6 +73,18 @@ export default function Sidebar({
   const footer = email ? (
     <div className="space-y-2 border-t border-border p-4">
       <p className="truncate text-xs text-muted-foreground">{email}</p>
+      <p className="text-xs text-muted-foreground">
+        {isAdmin ? 'Admin' : hasFullAccess ? 'VIP member' : 'Free account'}
+      </p>
+      {!hasFullAccess && (
+        <Link
+          href="/subscribe"
+          className="block rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          onClick={() => setOpen(false)}
+        >
+          Subscribe
+        </Link>
+      )}
       <Link
         href="/profile"
         className="block rounded-md px-3 py-2 text-sm hover:bg-accent"

@@ -12,8 +12,9 @@ function fmt(s: number) {
 }
 
 export default function PlayerBar() {
-  const { currentTrack, isPlaying, setIsPlaying, currentTime, setCurrentTime, duration, setDuration } =
+  const { currentTrack, isPlaying, setIsPlaying, currentTime, setCurrentTime, duration, setDuration, hasFullAccess } =
     usePlayer();
+  const [showPrompt, setShowPrompt] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
@@ -42,10 +43,28 @@ export default function PlayerBar() {
   }, [isPlaying]);
 
   return (
+    <>
+      {showPrompt && !hasFullAccess && (
+        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-md border border-border bg-background px-4 py-2 text-sm shadow-lg">
+          Preview ended.{' '}
+          <a href="/subscribe" className="text-primary underline">Subscribe to continue</a>
+          <button onClick={() => setShowPrompt(false)} className="ml-2 text-muted-foreground">✕</button>
+        </div>
+      )}
     <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur">
       <audio
         ref={audioRef}
-        onTimeUpdate={(e) => setCurrentTime((e.target as HTMLAudioElement).currentTime)}
+        onTimeUpdate={(e) => {
+          const t = (e.target as HTMLAudioElement).currentTime;
+          setCurrentTime(t);
+          if (!hasFullAccess && t >= 30) {
+            const audio = e.target as HTMLAudioElement;
+            audio.pause();
+            audio.currentTime = 30;
+            setIsPlaying(false);
+            setShowPrompt(true);
+          }
+        }}
         onLoadedMetadata={(e) => setDuration((e.target as HTMLAudioElement).duration)}
         onEnded={() => setIsPlaying(false)}
       />
@@ -119,5 +138,6 @@ export default function PlayerBar() {
         </div>
       </div>
     </div>
+    </>
   );
 }

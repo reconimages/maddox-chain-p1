@@ -6,6 +6,7 @@ import PlayerBar from "@/components/PlayerBar";
 import { Toaster } from "@/components/ui/sonner";
 import { isAdminRequest } from "@/lib/admin";
 import { getSessionUser } from "@/lib/auth";
+import { getAccess } from "@/lib/access";
 import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -16,13 +17,18 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [isAdmin, user] = await Promise.all([isAdminRequest(), getSessionUser()]);
+  const access = await getAccess();
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
       <body className="bg-background text-foreground antialiased">
-        <PlayerProvider>
+        <PlayerProvider hasFullAccess={access.hasFullAccess}>
           <div className="flex min-h-screen flex-col md:flex-row">
-            <Sidebar email={user?.email ?? null} isAdmin={isAdmin} />
+            <Sidebar
+              email={access.user?.email ?? null}
+              isAdmin={access.isAdmin}
+              hasFullAccess={access.hasFullAccess}
+              status={access.status}
+            />
             <main className="flex-1 pb-24 pt-16 md:pt-0">{children}</main>
           </div>
           <PlayerBar />

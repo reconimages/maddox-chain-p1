@@ -24,11 +24,12 @@ type PlayerContextValue = {
   setDuration: (d: number) => void;
   currentTime: number;
   duration: number;
+  hasFullAccess: boolean;
 };
 
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 
-export function PlayerProvider({ children }: { children: ReactNode }) {
+export function PlayerProvider({ children, hasFullAccess = true }: { children: ReactNode; hasFullAccess?: boolean }) {
   const [currentTrack, setCurrentTrack] = useState<PlayerTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -52,6 +53,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setDuration,
         currentTime,
         duration,
+        hasFullAccess,
       }}
     >
       {children}
