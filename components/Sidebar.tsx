@@ -17,11 +17,15 @@ export default function Sidebar({
   isAdmin,
   hasFullAccess = true,
   status = null,
+  isComped = false,
+  compedUntil = null,
 }: {
   email: string | null;
   isAdmin: boolean;
   hasFullAccess?: boolean;
   status?: string | null;
+  isComped?: boolean;
+  compedUntil?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -116,9 +120,15 @@ export default function Sidebar({
     <div className="space-y-2 border-t border-border p-4">
       <p className="truncate text-xs text-muted-foreground">{email}</p>
       <p className="text-xs text-muted-foreground">
-        {isAdmin ? 'Admin' : hasFullAccess ? 'VIP member' : 'Free account'}
+        {isAdmin
+          ? 'Admin'
+          : hasFullAccess && isComped
+          ? `VIP (complimentary)${compedUntil && new Date(compedUntil).getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000 ? ' · expires ' + new Date(compedUntil).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}`
+          : hasFullAccess
+          ? 'VIP member'
+          : 'Free account'}
       </p>
-      {!hasFullAccess && (
+      {!hasFullAccess && !isComped && (
         <Link
           href="/subscribe"
           className="block rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90"

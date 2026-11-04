@@ -28,6 +28,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               isAdmin={access.isAdmin}
               hasFullAccess={access.hasFullAccess}
               status={access.status}
+              isComped={access.isComped}
+              compedUntil={access.compedUntil}
             />
             <main className="flex-1 pb-24 pt-12 md:pt-0">{children}</main>
           </div>

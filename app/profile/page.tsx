@@ -23,6 +23,17 @@ export default async function ProfilePage() {
         <ManageBillingButton />
       </div>
     );
+  } else if (access.isComped) {
+    billingCard = (
+      <div className="rounded-md border border-border p-4 space-y-2">
+        <p className="text-sm font-medium">Billing</p>
+        <p className="text-sm text-muted-foreground">
+          You have complimentary VIP access until {access.compedUntil ? new Date(access.compedUntil).toLocaleDateString() : '—'}.
+          You have not been charged. Access will end on this date unless you subscribe.
+        </p>
+        <Link href="/subscribe" className="text-primary underline text-sm">Subscribe</Link>
+      </div>
+    );
   } else if (access.status === 'past_due') {
     billingCard = (
       <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-4 space-y-2">

@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import CompDialog from '@/components/admin/CompDialog';
 
 type Row = {
   id: string;
@@ -20,6 +21,8 @@ type Row = {
   subscription_status: string;
   stripeLinked: boolean;
   updated_at: string;
+  comped_until: string | null;
+  comped_by_note: string | null;
 };
 
 function relTime(iso: string) {
@@ -39,10 +42,11 @@ const statusColor: Record<string, string> = {
   canceled: 'text-red-500',
 };
 
-export default function SubscribersTable({ rows }: { rows: Row[] }) {
+export default function SubscribersTable({ rows, compedCount }: { rows: Row[]; compedCount: number }) {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [manageTarget, setManageTarget] = useState<Row | null>(null);
+  const [compTarget, setCompTarget] = useState<Row | null>(null);
   const [loading, setLoading] = useState(false);
 
   const filtered = useMemo(() => {
@@ -57,6 +61,7 @@ export default function SubscribersTable({ rows }: { rows: Row[] }) {
     free: rows.filter((r) => r.subscription_status === 'free').length,
     past_due: rows.filter((r) => r.subscription_status === 'past_due').length,
     canceled: rows.filter((r) => r.subscription_status === 'canceled').length,
+    comped: compedCount,
   };
 
   async function openPortal() {
@@ -93,10 +98,18 @@ export default function SubscribersTable({ rows }: { rows: Row[] }) {
     }
   }
 
+  function isComped(r: Row) {
+    return r.comped_until !== null && new Date(r.comped_until) > new Date();
+  }
+
+  function isCompExpired(r: Row) {
+    return r.comped_until !== null && new Date(r.comped_until) <= new Date();
+  }
+
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         <div className="rounded-md border border-border p-3 text-center">
           <p className="text-2xl font-bold">{counts.total}</p>
           <p className="text-xs text-muted-foreground">Total</p>
@@ -104,6 +117,10 @@ export default function SubscribersTable({ rows }: { rows: Row[] }) {
         <div className="rounded-md border border-border p-3 text-center">
           <p className="text-2xl font-bold text-green-500">{counts.active}</p>
           <p className="text-xs text-muted-foreground">Paid</p>
+        </div>
+        <div className="rounded-md border border-border p-3 text-center">
+          <p className="text-2xl font-bold text-amber-500">{counts.comped}</p>
+          <p className="text-xs text-muted-foreground">Comped</p>
         </div>
         <div className="rounded-md border border-border p-3 text-center">
           <p className="text-2xl font-bold">{counts.free}</p>
@@ -158,12 +175,27 @@ export default function SubscribersTable({ rows }: { rows: Row[] }) {
               <tr key={r.id} className="border-b">
                 <td className="py-2">{r.email}</td>
                 <td className="py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                <td className={`py-2 font-medium ${statusColor[r.subscription_status] || ''}`}>
-                  {r.subscription_status}
+                <td className="py-2">
+                  <span className={`font-medium ${statusColor[r.subscription_status] || ''}`}>
+                    {r.subscription_status}
+                  </span>
+                  {isComped(r) && (
+                    <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-bold text-amber-500" title={`VIP until ${r.comped_until!.slice(0, 10)}`}>
+                      COMP
+                    </span>
+                  )}
+                  {isCompExpired(r) && (
+                    <span className="ml-2 rounded bg-zinc-500/20 px-1.5 py-0.5 text-xs font-bold text-zinc-500" title={`Expired ${r.comped_until!.slice(0, 10)}`}>
+                      COMP EXPIRED
+                    </span>
+                  )}
                 </td>
                 <td className="py-2">{r.stripeLinked ? 'Linked' : '—'}</td>
                 <td className="py-2 text-xs text-muted-foreground">{relTime(r.updated_at)}</td>
-                <td className="py-2">
+                <td className="py-2 flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => setCompTarget(r)}>
+                    {isComped(r) ? `Comp: ${r.comped_until!.slice(0, 10)}` : isCompExpired(r) ? 'Comp expired' : 'Comp'}
+                  </Button>
                   {(r.subscription_status === 'active' || r.subscription_status === 'past_due') && (
                     <Button size="sm" variant="outline" onClick={() => setManageTarget(r)}>
                       Manage
@@ -175,6 +207,17 @@ export default function SubscribersTable({ rows }: { rows: Row[] }) {
           </tbody>
         </table>
       </div>
+
+      {/* Comp dialog */}
+      {compTarget && (
+        <CompDialog
+          userId={compTarget.id}
+          userEmail={compTarget.email}
+          currentComp={compTarget.comped_until}
+          currentNote={compTarget.comped_by_note}
+          onClose={() => setCompTarget(null)}
+        />
+      )}
 
       {/* Manage dialog */}
       <Dialog open={!!manageTarget} onOpenChange={(o) => !o && setManageTarget(null)}>
