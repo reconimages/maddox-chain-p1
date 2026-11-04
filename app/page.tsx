@@ -1,15 +1,19 @@
-import AlbumCard from "@/components/AlbumCard";
-import { createClient } from "@/lib/supabase/server";
-import { getAccess } from "@/lib/access";
-import CheckoutPoller from "@/components/CheckoutPoller";
-import Link from "next/link";
+import { getAccess } from '@/lib/access';
+import { createClient } from '@/lib/supabase/server';
+import HeroSection from '@/components/HeroSection';
+import SectionHeader from '@/components/SectionHeader';
+import EmptyState from '@/components/EmptyState';
+import AlbumCard from '@/components/AlbumCard';
+import Link from 'next/link';
+import CheckoutPoller from '@/components/CheckoutPoller';
 
 type AlbumRow = {
   id: string;
   title: string;
   release_year: number;
   created_at: string;
-  tracks: { count: number; is_vault: boolean }[];
+  public_track_count: number;
+  vault_track_count: number;
 };
 
 export default async function Home({
@@ -18,26 +22,35 @@ export default async function Home({
   searchParams: Promise<{ checkout?: string }>;
 }) {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("albums")
-    .select("id,title,release_year,created_at,tracks(is_vault)")
-    .order("created_at", { ascending: false });
+  const { data: raw } = await supabase
+    .from('albums')
+    .select('id, title, release_year, created_at, tracks(is_vault)')
+    .order('release_year', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  const allAlbums = (data || []) as AlbumRow[];
+  const allAlbums = (raw || []).map((a: any) => {
+    const ts = a.tracks || [];
+    return {
+      id: a.id,
+      title: a.title,
+      release_year: a.release_year,
+      created_at: a.created_at,
+      public_track_count: ts.filter((t: any) => !t.is_vault).length,
+      vault_track_count: ts.filter((t: any) => t.is_vault).length,
+    };
+  });
 
-  // An album is "vault" if all its tracks are vault (or it has vault tracks and no public ones)
-  const publicAlbums = allAlbums.filter((a) => {
-    const ts = a.tracks || [];
-    if (ts.length === 0) return true;
-    return !ts.every((t) => t.is_vault);
-  });
-  const vaultAlbums = allAlbums.filter((a) => {
-    const ts = a.tracks || [];
-    return ts.length > 0 && ts.every((t) => t.is_vault);
-  });
+  const publicAlbums = allAlbums.filter((a) => a.public_track_count > 0);
+  const vaultAlbums = allAlbums.filter((a) => a.vault_track_count > 0 && a.public_track_count === 0);
+
+  const albums = publicAlbums.filter((r) => r.public_track_count > 1);
+  const singles = publicAlbums.filter((r) => r.public_track_count === 1);
+  const newAlbums = albums.slice(0, 6);
+  const newSingles = singles.slice(0, 6);
 
   const sp = await searchParams;
   const access = await getAccess();
+  const showJoinCTA = !access.hasFullAccess;
   const showCheckoutBanner = sp?.checkout === 'success' && !!access.user && !access.hasFullAccess;
 
   return (
@@ -48,20 +61,49 @@ export default async function Home({
           <CheckoutPoller />
         </div>
       )}
-      {publicAlbums.length === 0 ? (
-        <p className="text-muted-foreground">No albums yet.</p>
+
+      <HeroSection showJoinCTA={showJoinCTA} />
+
+      <SectionHeader title="New Albums" subtitle="Latest full-length releases" count={newAlbums.length} />
+      {newAlbums.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {newAlbums.map((a) => (
+            <AlbumCard key={a.id} album={{ id: a.id, title: a.title, release_year: a.release_year }} />
+          ))}
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <EmptyState message="No albums yet. Check back soon." />
+      )}
+
+      <SectionHeader title="New Singles" subtitle="Latest single tracks" count={newSingles.length} />
+      {newSingles.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {newSingles.map((a) => (
+            <AlbumCard key={a.id} album={{ id: a.id, title: a.title, release_year: a.release_year }} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState message="No singles yet. Check back soon." />
+      )}
+
+      <h2 id="catalog" className="text-xl md:text-2xl font-bold uppercase tracking-wide mt-16 scroll-mt-20 text-zinc-100">
+        Full Catalog
+      </h2>
+      <p className="text-sm text-zinc-500 mt-1 mb-4">Every public release, newest first.</p>
+      {publicAlbums.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           {publicAlbums.map((a) => (
             <AlbumCard key={a.id} album={{ id: a.id, title: a.title, release_year: a.release_year }} />
           ))}
         </div>
+      ) : (
+        <EmptyState message="The catalog is empty. Check back soon." />
       )}
 
       {vaultAlbums.length > 0 && (
         <section className="mt-12">
-          <h2 className="mb-4 text-xl font-bold tracking-widest text-amber-500">VIP VAULT — TEASER</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <SectionHeader title="VIP Vault" subtitle="Unreleased tracks. Subscribers only." count={vaultAlbums.length} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {vaultAlbums.map((a) => (
               <Link
                 key={a.id}
