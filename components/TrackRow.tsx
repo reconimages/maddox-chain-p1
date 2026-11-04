@@ -1,7 +1,7 @@
 'use client';
 
 import { Play } from 'lucide-react';
-import { Heart, ListPlus, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { ListPlus } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
 import LikeButton from '@/components/LikeButton';
 import {
@@ -31,6 +31,7 @@ export default function TrackRow({
   initialLiked = false,
   playlists,
   rowActions,
+  queue,
 }: {
   track: Track;
   albumTitle: string;
@@ -39,8 +40,9 @@ export default function TrackRow({
   initialLiked?: boolean;
   playlists?: Playlist[];
   rowActions?: React.ReactNode;
+  queue?: { id: string; title: string; track_number: number; duration_seconds: number }[];
 }) {
-  const { playTrack, currentTrack, isPlaying } = usePlayer();
+  const { playTrack, playQueue, currentTrack, isPlaying } = usePlayer();
   const currentTrackId = currentTrack?.id ?? null;
   const mm = Math.floor(track.duration_seconds / 60);
   const ss = String(track.duration_seconds % 60).padStart(2, '0');
@@ -55,9 +57,13 @@ export default function TrackRow({
   return (
     <div className="flex w-full items-center gap-3 rounded-md px-2 py-2 hover:bg-accent/50">
       <button
-        onClick={() =>
-          playTrack({ id: track.id, title: track.title, albumTitle, albumId })
-        }
+        onClick={() => {
+          const q = queue && queue.length > 0
+            ? queue.map((t) => ({ id: t.id, title: t.title, albumTitle, albumId }))
+            : [{ id: track.id, title: track.title, albumTitle, albumId }];
+          const idx = q.findIndex((t) => t.id === track.id);
+          playQueue(q, idx >= 0 ? idx : 0);
+        }}
         className="flex flex-1 items-center gap-3 text-left"
       >
         <span className="w-6 text-center text-xs text-muted-foreground">
@@ -69,31 +75,33 @@ export default function TrackRow({
           {mm}:{ss}
         </span>
       </button>
-      {isSignedIn && (
+      {isSignedIn && playlists ? (
         <div className="flex items-center gap-1">
           <LikeButton trackId={track.id} initialLiked={initialLiked} isSignedIn={isSignedIn} />
-          {playlists && playlists.length > 0 ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <ListPlus className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {playlists.map((p) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ListPlus className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {playlists.length > 0 ? (
+                playlists.map((p) => (
                   <DropdownMenuItem key={p.id} onClick={() => handleAdd(p.id, p.name)}>
                     {p.name}
                   </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : isSignedIn && playlists ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8" disabled title="No playlists yet">
-              <ListPlus className="h-4 w-4 opacity-40" />
-            </Button>
-          ) : null}
+                ))
+              ) : (
+                <DropdownMenuItem asChild>
+                  <a href="/playlists" className="text-primary">Create a playlist first</a>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
+      ) : isSignedIn ? (
+        <LikeButton trackId={track.id} initialLiked={initialLiked} isSignedIn={isSignedIn} />
+      ) : null}
       {rowActions && <div className="flex items-center gap-1">{rowActions}</div>}
     </div>
   );

@@ -36,7 +36,7 @@ export default async function LikedPage() {
         </p>
       ) : (
         <div className="space-y-1">
-          {tracks.map((t: any) => (
+          {tracks.map((t: any, idx: number) => (
             <TrackRow
               key={t.id}
               track={{ id: t.id, title: t.title, track_number: 0, duration_seconds: t.duration_seconds }}
@@ -45,6 +45,7 @@ export default async function LikedPage() {
               isSignedIn={true}
               initialLiked={true}
               playlists={playlists || []}
+              queue={tracks}
             />
           ))}
         </div>

@@ -62,6 +62,7 @@ export default async function AlbumPage({
             }}
             albumTitle={album.title}
             albumId={album.id}
+            queue={tracks || []}
           />
         ))}
       </div>

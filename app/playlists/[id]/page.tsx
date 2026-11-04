@@ -94,6 +94,7 @@ export default async function PlaylistDetailPage({
                   isSignedIn={true}
                   initialLiked={likedSet.has(t.id)}
                   playlists={playlists || []}
+                  queue={tracks}
                   rowActions={
                     <>
                       <form action={async () => { 'use server'; await moveTrack(playlist.id, t.id, 'up'); }}>
