@@ -89,18 +89,18 @@ export default function UploadForm() {
 
       const supabase = createClient();
 
-      // 2. Upload cover directly to Supabase
+      // 2. Upload cover directly to Supabase (auto-resumable for large files)
       let coverPath: string | null = null;
-      if (cover && init.cover) {
+      if (cover && init.coverPath) {
         setProgress("Uploading cover...");
         const { error } = await supabase.storage
           .from("covers")
-          .uploadToSignedUrl(init.cover.path, init.cover.token, cover, {
-            contentType: cover.type || "image/jpeg",
+          .upload(init.coverPath, cover, {
+            contentType: audioContentType(cover.name, cover.type),
             upsert: true,
           });
         if (error) throw new Error(error.message);
-        coverPath = init.cover.path;
+        coverPath = init.coverPath;
       }
 
       // Compute durations client-side from the audio files
@@ -108,7 +108,7 @@ export default function UploadForm() {
         audio.map((f) => getAudioDuration(f))
       );
 
-      // 3. Upload audio files directly to Supabase
+      // 3. Upload audio files directly to Supabase (auto-resumable for large files)
       const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string }[] = [];
       for (let i = 0; i < audio.length; i++) {
         const f = audio[i];
@@ -116,7 +116,7 @@ export default function UploadForm() {
         setProgress(`Uploading ${i + 1} of ${audio.length}...`);
         const { error } = await supabase.storage
           .from("audio")
-          .uploadToSignedUrl(a.path, a.token, f, {
+          .upload(a.path, f, {
             contentType: audioContentType(f.name, f.type),
             upsert: true,
           });

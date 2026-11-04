@@ -62,19 +62,11 @@ export async function POST(req: Request) {
     }
 
     const albumId = crypto.randomUUID();
-    const supabase = createAdminClient();
 
-    let cover: { path: string; signedUrl: string; token: string } | null = null;
+    let coverPath: string | null = null;
     if (coverName) {
       const ext = extOf(coverName);
-      const cpath = `covers/${albumId}.${ext}`;
-      const { data, error } = await supabase.storage
-        .from("covers")
-        .createSignedUploadUrl(cpath, { upsert: true });
-      if (error || !data) {
-        return NextResponse.json({ error: error?.message || "Failed to create cover upload URL" }, { status: 500 });
-      }
-      cover = { path: cpath, signedUrl: data.signedUrl, token: data.token };
+      coverPath = `covers/${albumId}.${ext}`;
     }
 
     const audio = audioNames.map((name, i) => {
@@ -85,22 +77,10 @@ export async function POST(req: Request) {
       return { name, title: ttitle, track_number: tn, path: spath };
     });
 
-    // Create signed upload URLs for audio
-    const audioWithUrls = [];
-    for (const a of audio) {
-      const { data, error } = await supabase.storage
-        .from("audio")
-        .createSignedUploadUrl(a.path, { upsert: true });
-      if (error || !data) {
-        return NextResponse.json({ error: error?.message || "Failed to create audio upload URL" }, { status: 500 });
-      }
-      audioWithUrls.push({ ...a, signedUrl: data.signedUrl, token: data.token });
-    }
-
     return NextResponse.json({
       albumId,
-      cover,
-      audio: audioWithUrls,
+      coverPath,
+      audio,
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Init failed" }, { status: 500 });
