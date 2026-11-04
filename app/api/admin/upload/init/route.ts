@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/admin";
 
-const ALLOWED_AUDIO = ["mp3", "wav", "m4a", "ogg", "flac"];
+const ALLOWED_AUDIO = ["mp3", "wav", "m4a", "ogg", "flac", "webm"];
 const ALLOWED_COVER = ["jpg", "jpeg", "png", "webp"];
 
 function extOf(name: string) {
