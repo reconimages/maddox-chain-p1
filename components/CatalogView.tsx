@@ -13,10 +13,20 @@ type Album = {
   public_track_count: number;
 };
 
-export default function CatalogView({ albums }: { albums: Album[] }) {
+export default function CatalogView({ albums, initialType = 'all' }: { albums: Album[]; initialType?: 'all' | 'album' | 'single' }) {
   const [search, setSearch] = useState('');
-  const [type, setType] = useState<'all' | 'album' | 'single'>('all');
+  const [type, setTypeState] = useState<'all' | 'album' | 'single'>(initialType);
   const [sort, setSort] = useState<'newest' | 'oldest' | 'title'>('newest');
+
+  const setType = (next: 'all' | 'album' | 'single') => {
+    setTypeState(next);
+    const params = new URLSearchParams(window.location.search);
+    if (next === 'all') params.delete('type');
+    else params.set('type', next);
+    const qs = params.toString();
+    const url = qs ? `/catalog?${qs}` : '/catalog';
+    window.history.replaceState(null, '', url);
+  };
 
   const filtered = albums.filter((a) => {
     if (type === 'album' && a.public_track_count < 2) return false;

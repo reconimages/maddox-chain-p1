@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Heart, ListMusic, Lock, Unlock } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, X, Heart, ListMusic, Lock, Unlock, Disc3, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 export default function Sidebar({
   email,
@@ -16,6 +24,8 @@ export default function Sidebar({
   status?: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const isCatalogActive = pathname.startsWith('/catalog');
 
   const nav = (
     <nav className="space-y-1 px-2">
@@ -26,27 +36,45 @@ export default function Sidebar({
       >
         Home
       </Link>
-      <Link
-        href="/catalog"
-        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
-        onClick={() => setOpen(false)}
-      >
-        Catalog
-      </Link>
-      <Link
-        href="/albums"
-        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
-        onClick={() => setOpen(false)}
-      >
-        Albums
-      </Link>
-      <Link
-        href="/singles"
-        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
-        onClick={() => setOpen(false)}
-      >
-        Singles
-      </Link>
+      <DropdownMenu>
+        <div className="flex items-center">
+          <Link
+            href="/catalog"
+            onClick={() => setOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex-1',
+              isCatalogActive
+                ? 'bg-zinc-800/80 text-white shadow-inner'
+                : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900'
+            )}
+          >
+            <Disc3 className={cn('w-4 h-4', isCatalogActive ? 'text-amber-400' : 'text-zinc-400')} />
+            Catalog
+          </Link>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label="Catalog filters"
+              className={cn(
+                'p-1.5 rounded-md hover:bg-zinc-900 text-zinc-400 hover:text-zinc-100',
+                isCatalogActive && 'text-zinc-300'
+              )}
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+        </div>
+        <DropdownMenuContent align="start" className="w-40">
+          <DropdownMenuItem asChild>
+            <Link href="/catalog">All releases</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/catalog?type=album">Albums only</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/catalog?type=single">Singles only</Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Link
         href="/vault"
         className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"

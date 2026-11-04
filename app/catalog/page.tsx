@@ -3,7 +3,15 @@ import CatalogView from '@/components/CatalogView';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CatalogPage() {
+export default async function CatalogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const sp = await searchParams;
+  const initialType =
+    sp?.type === 'album' || sp?.type === 'single' ? sp.type : 'all';
+
   const supabase = await createClient();
   const { data } = await supabase
     .from('albums')
@@ -36,7 +44,7 @@ export default async function CatalogPage() {
           accounts get 30-second previews of every track.
         </p>
       </div>
-      <CatalogView albums={albums} />
+      <CatalogView albums={albums} initialType={initialType} />
     </div>
   );
 }
