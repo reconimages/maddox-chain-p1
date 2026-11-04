@@ -35,7 +35,7 @@ const bodySchema = z.object({
   mode: z.enum(["Album", "Single"]),
   title: z.string().min(1),
   year: z.coerce.number().int().min(1900).max(2100),
-  coverName: z.string().optional(),
+  coverName: z.string().nullable().optional(),
   audioNames: z.array(z.string().min(1)).min(1),
 });
 
