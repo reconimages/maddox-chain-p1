@@ -18,9 +18,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-3 space-y-2">
           <div className="flex items-center justify-between gap-4">
-            <p className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-sm font-bold tracking-widest text-transparent uppercase">
+            <Link href="/" className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-sm font-bold tracking-widest text-transparent uppercase">
               MADDOX CHAIN / ADMIN
-            </p>
+            </Link>
             <div className="flex items-center gap-2">
               <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">View site</Link>
               <form action="/api/admin/logout" method="post">

@@ -117,9 +117,9 @@ export default function Sidebar({
     <>
       {/* Mobile top header */}
       <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b border-border bg-background p-4 md:hidden">
-        <p className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-lg font-bold tracking-widest text-transparent uppercase">
+        <Link href="/" onClick={() => setOpen(false)} className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-lg font-bold tracking-widest text-transparent uppercase">
           MADDOX CHAIN
-        </p>
+        </Link>
         <button
           onClick={() => setOpen(true)}
           aria-label="Open menu"
@@ -138,9 +138,9 @@ export default function Sidebar({
           />
           <aside className="absolute left-0 top-0 h-full w-64 bg-background border-r border-border">
             <div className="flex items-center justify-between p-4">
-              <p className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-lg font-bold tracking-widest text-transparent uppercase">
+              <Link href="/" onClick={() => setOpen(false)} className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-lg font-bold tracking-widest text-transparent uppercase">
                 MADDOX CHAIN
-              </p>
+              </Link>
               <button onClick={() => setOpen(false)} aria-label="Close menu">
                 <X className="h-5 w-5" />
               </button>
@@ -154,9 +154,9 @@ export default function Sidebar({
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r border-border md:block">
         <div className="p-4">
-          <p className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-lg font-bold tracking-widest text-transparent uppercase">
+          <Link href="/" className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-lg font-bold tracking-widest text-transparent uppercase">
             MADDOX CHAIN
-          </p>
+          </Link>
         </div>
         {nav}
         <div className="mt-auto">{footer}</div>
