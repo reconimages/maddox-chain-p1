@@ -29,11 +29,6 @@ export default async function Home({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <header className="mb-8">
-        <h1 className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-3xl font-bold tracking-widest text-transparent uppercase">
-          MADDOX CHAIN
-        </h1>
-      </header>
       {showCheckoutBanner && (
         <div className="mb-6 rounded-md border border-border bg-muted p-4 text-sm">
           Payment received. Activating your account…
