@@ -13,7 +13,16 @@ export const getAccess = cache(async (): Promise<Access> => {
   const isAdmin = await isAdminRequest();
   const user = await getSessionUser();
   if (!user) {
-    return { user: null, isAdmin, status: null, hasFullAccess: isAdmin };
+    return { user: null, isAdmin, status: isAdmin ? 'active' : null, hasFullAccess: isAdmin };
+  }
+  // Admin always has full access and active status, regardless of subscription
+  if (isAdmin) {
+    return {
+      user: { id: user.id, email: user.email ?? null },
+      isAdmin: true,
+      status: 'active',
+      hasFullAccess: true,
+    };
   }
   const supabase = await createServerSupabase();
   const { data: profile } = await supabase
@@ -24,8 +33,8 @@ export const getAccess = cache(async (): Promise<Access> => {
   const status = (profile?.subscription_status ?? 'free') as Access['status'];
   return {
     user: { id: user.id, email: user.email ?? null },
-    isAdmin,
+    isAdmin: false,
     status,
-    hasFullAccess: isAdmin || status === 'active',
+    hasFullAccess: status === 'active',
   };
 });
