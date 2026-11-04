@@ -28,7 +28,7 @@ export default async function SubscribePage() {
         {/* Monthly */}
         <div className="rounded-xl border border-border p-6">
           <h2 className="text-xl font-bold">Monthly</h2>
-          <p className="mt-2 text-4xl font-bold">$5.99</p>
+          <p className="mt-2 text-4xl font-bold">£5.99</p>
           <p className="text-sm text-muted-foreground">PER MONTH</p>
           <ul className="mt-4 space-y-2 text-sm">
             <li>Full catalog</li>
@@ -46,7 +46,7 @@ export default async function SubscribePage() {
             BEST VALUE
           </span>
           <h2 className="text-xl font-bold">Yearly</h2>
-          <p className="mt-2 text-4xl font-bold">$50</p>
+          <p className="mt-2 text-4xl font-bold">£50</p>
           <p className="text-sm text-muted-foreground">PER YEAR · SAVE 30%</p>
           <ul className="mt-4 space-y-2 text-sm">
             <li>Full catalog</li>
