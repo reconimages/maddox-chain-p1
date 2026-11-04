@@ -6,6 +6,8 @@ import { isAdminRequest } from "@/lib/admin";
 
 const ALLOWED_AUDIO = ["mp3", "wav", "m4a", "ogg", "flac"];
 const ALLOWED_COVER = ["jpg", "jpeg", "png", "webp"];
+const MAX_AUDIO_BYTES = 4 * 1024 * 1024; // 4 MB (Vercel body limit ~4.5 MB)
+const MAX_COVER_BYTES = 2 * 1024 * 1024; // 2 MB
 
 function extOf(name: string) {
   return (name.split(".").pop() || "").toLowerCase();
@@ -67,9 +69,15 @@ export async function POST(req: Request) {
     if (coverFile && !ALLOWED_COVER.includes(extOf(coverFile.name))) {
       return NextResponse.json({ error: "Cover must be jpg/jpeg/png/webp." }, { status: 400 });
     }
+    if (coverFile && coverFile.size > MAX_COVER_BYTES) {
+      return NextResponse.json({ error: `Cover too large (max 2 MB). Yours is ${(coverFile.size / 1024 / 1024).toFixed(1)} MB.` }, { status: 400 });
+    }
     for (const f of audioFiles) {
       if (!ALLOWED_AUDIO.includes(extOf(f.name))) {
         return NextResponse.json({ error: `Unsupported audio type: ${f.name}` }, { status: 400 });
+      }
+      if (f.size > MAX_AUDIO_BYTES) {
+        return NextResponse.json({ error: `Audio file too large (max 4 MB): ${f.name}` }, { status: 400 });
       }
     }
 

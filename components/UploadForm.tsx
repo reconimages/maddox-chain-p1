@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 export default function UploadForm() {
   const router = useRouter();
@@ -30,27 +31,84 @@ export default function UploadForm() {
       return;
     }
     setLoading(true);
-    setProgress(`uploading 1 of ${audio.length + (cover ? 1 : 0)}`);
-    const fd = new FormData();
-    fd.append("mode", mode);
-    fd.append("title", title.trim());
-    fd.append("year", year);
-    if (cover) fd.append("cover", cover);
-    for (const f of audio) fd.append("audio", f);
-
     try {
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(j?.error || "Upload failed.");
-      } else {
-        toast.success(`Uploaded: ${title.trim()}`);
-        setTitle("");
-        setCover(null);
-        setAudio([]);
-        if (fileRef.current) fileRef.current.value = "";
-        router.refresh();
+      // 1. Init: get signed upload URLs
+      setProgress("Preparing upload...");
+      const initRes = await fetch("/api/admin/upload/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          title: title.trim(),
+          year,
+          coverName: cover?.name,
+          audioNames: audio.map((f) => f.name),
+        }),
+      });
+      const init = await initRes.json().catch(() => ({}));
+      if (!initRes.ok) {
+        toast.error(init?.error || "Upload failed.");
+        return;
       }
+
+      const supabase = createClient();
+
+      // 2. Upload cover directly to Supabase
+      let coverPath: string | null = null;
+      if (cover && init.cover) {
+        setProgress("Uploading cover...");
+        const { error } = await supabase.storage
+          .from("covers")
+          .uploadToSignedUrl(init.cover.path, init.cover.token, cover, {
+            contentType: cover.type || "image/jpeg",
+            upsert: true,
+          });
+        if (error) throw new Error(error.message);
+        coverPath = init.cover.path;
+      }
+
+      // 3. Upload audio files directly to Supabase
+      const tracks: { title: string; track_number: number; storage_path: string }[] = [];
+      for (let i = 0; i < audio.length; i++) {
+        const f = audio[i];
+        const a = init.audio[i];
+        setProgress(`Uploading ${i + 1} of ${audio.length}...`);
+        const { error } = await supabase.storage
+          .from("audio")
+          .uploadToSignedUrl(a.path, a.token, f, {
+            contentType: f.type || "audio/mpeg",
+            upsert: true,
+          });
+        if (error) throw new Error(error.message);
+        tracks.push({ title: a.title, track_number: a.track_number, storage_path: a.path });
+      }
+
+      // 4. Finish: insert DB rows
+      setProgress("Finalizing...");
+      const finishRes = await fetch("/api/admin/upload/finish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          albumId: init.albumId,
+          mode,
+          title: title.trim(),
+          year,
+          coverPath,
+          tracks,
+        }),
+      });
+      const fin = await finishRes.json().catch(() => ({}));
+      if (!finishRes.ok) {
+        toast.error(fin?.error || "Upload failed.");
+        return;
+      }
+
+      toast.success(`Uploaded: ${title.trim()}`);
+      setTitle("");
+      setCover(null);
+      setAudio([]);
+      if (fileRef.current) fileRef.current.value = "";
+      router.refresh();
     } catch (e: any) {
       toast.error(e?.message || "Upload failed.");
     } finally {
@@ -98,10 +156,10 @@ export default function UploadForm() {
           onChange={(e) => setAudio(Array.from(e.target.files || []))}
         />
         {audio.length > 0 && (
-          <p className="text-xs text-muted-foreground">{audio.length} file(s) selected</p>
+          <p className="text-sm text-muted-foreground">{audio.length} file(s) selected</p>
         )}
       </div>
-      {progress && <p className="text-xs text-muted-foreground">{progress}</p>}
+      {progress && <p className="text-sm text-muted-foreground">{progress}</p>}
       <Button type="submit" disabled={loading}>
         {loading ? "Uploading..." : "Upload"}
       </Button>
