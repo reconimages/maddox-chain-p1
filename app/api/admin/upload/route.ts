@@ -39,112 +39,111 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
-  if (!(await isAdminRequest())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const formData = await req.formData();
-  const mode = formData.get("mode");
-  const title = formData.get("title");
-  const year = formData.get("year");
-  const parsed = bodySchema.safeParse({ mode, title, year });
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.message }, { status: 400 });
-  }
-  const { mode: m, title: albumTitle, year: releaseYear } = parsed.data;
-
-  const cover = formData.get("cover") as File | null;
-  const audioFiles: File[] = [];
-  for (const [key, val] of formData.entries()) {
-    if (key === "audio" && val instanceof File) audioFiles.push(val);
-  }
-
-  if (!audioFiles.length) {
-    return NextResponse.json({ error: "At least one audio file is required." }, { status: 400 });
-  }
-  if (cover && !ALLOWED_COVER.includes(extOf(cover.name))) {
-    return NextResponse.json({ error: "Cover must be jpg/jpeg/png/webp." }, { status: 400 });
-  }
-  for (const f of audioFiles) {
-    if (!ALLOWED_AUDIO.includes(extOf(f.name))) {
-      return NextResponse.json({ error: `Unsupported audio type: ${f.name}` }, { status: 400 });
-    }
-  }
-
-  const albumId = crypto.randomUUID();
-  const supabase = createAdminClient();
-  const uploadedAudio: string[] = [];
-  let uploadedCover: string | null = null;
-
   try {
-    // cover
-    let coverPath: string | null = null;
-    if (cover) {
-      const ext = extOf(cover.name);
-      const cpath = `covers/${albumId}.${ext}`;
-      const buf = Buffer.from(await cover.arrayBuffer());
-      const { error: upErr } = await supabase.storage
-        .from("covers")
-        .upload(cpath, buf, { contentType: cover.type || "image/jpeg", upsert: true });
-      if (upErr) throw new Error(upErr.message);
-      coverPath = cpath;
-      uploadedCover = cpath;
+    if (!(await isAdminRequest())) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // tracks
-    const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string }[] = [];
-    for (let i = 0; i < audioFiles.length; i++) {
-      const f = audioFiles[i];
-      const buf = Buffer.from(await f.arrayBuffer());
-      let duration = 0;
-      try {
-        const meta = await parseBuffer(buf);
-        duration = Math.round(meta.format.duration || 0);
-      } catch {
-        duration = 0;
+    const formData = await req.formData();
+    const mode = formData.get("mode");
+    const title = formData.get("title");
+    const year = formData.get("year");
+    const parsed = bodySchema.safeParse({ mode, title, year });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.message }, { status: 400 });
+    }
+    const { mode: m, title: albumTitle, year: releaseYear } = parsed.data;
+
+    const cover = formData.get("cover");
+    const coverFile = cover instanceof File ? cover : null;
+    const audioFiles: File[] = [];
+    for (const [key, val] of formData.entries()) {
+      if (key === "audio" && val instanceof File) audioFiles.push(val);
+    }
+
+    if (!audioFiles.length) {
+      return NextResponse.json({ error: "At least one audio file is required." }, { status: 400 });
+    }
+    if (coverFile && !ALLOWED_COVER.includes(extOf(coverFile.name))) {
+      return NextResponse.json({ error: "Cover must be jpg/jpeg/png/webp." }, { status: 400 });
+    }
+    for (const f of audioFiles) {
+      if (!ALLOWED_AUDIO.includes(extOf(f.name))) {
+        return NextResponse.json({ error: `Unsupported audio type: ${f.name}` }, { status: 400 });
       }
-      const tn = trackNumberFromFilename(f.name, i + 1);
-      const ttitle = m === "Single" && title ? String(title) : trackTitleFromFilename(f.name);
-      const ext = extOf(f.name);
-      const spath = `audio/${albumId}/${String(tn).padStart(2, "0")}-${slug(ttitle)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("audio")
-        .upload(spath, buf, { contentType: f.type || "audio/mpeg", upsert: true });
-      if (upErr) throw new Error(upErr.message);
-      uploadedAudio.push(spath);
-      tracks.push({ title: ttitle, track_number: tn, duration_seconds: duration, storage_path: spath });
     }
 
-    // For Single mode, override title with provided track title
-    const finalAlbumTitle = m === "Single" ? String(title) : albumTitle;
+    const albumId = crypto.randomUUID();
+    const supabase = createAdminClient();
+    const uploadedAudio: string[] = [];
+    let uploadedCover: string | null = null;
 
-    // insert album
-    const { data: albumRow, error: albumErr } = await supabase
-      .from("albums")
-      .insert({ id: albumId, title: finalAlbumTitle, release_year: releaseYear, cover_path: coverPath })
-      .select()
-      .single();
-    if (albumErr) throw new Error(albumErr.message);
-
-    // insert tracks
-    const rows = tracks.map((t) => ({
-      album_id: albumRow.id,
-      title: t.title,
-      track_number: t.track_number,
-      duration_seconds: t.duration_seconds,
-      storage_path: t.storage_path,
-    }));
-    const { error: tracksErr } = await supabase.from("tracks").insert(rows);
-    if (tracksErr) throw new Error(tracksErr.message);
-
-    return NextResponse.json({ albumId: albumRow.id });
-  } catch (e: any) {
-    // cleanup
     try {
-      if (uploadedCover) await supabase.storage.from("covers").remove([uploadedCover]);
-      if (uploadedAudio.length) await supabase.storage.from("audio").remove(uploadedAudio);
-      await supabase.from("albums").delete().eq("id", albumId);
-    } catch {}
-    return NextResponse.json({ error: e?.message || "Upload failed" }, { status: 500 });
+      let coverPath: string | null = null;
+      if (coverFile) {
+        const ext = extOf(coverFile.name);
+        const cpath = `covers/${albumId}.${ext}`;
+        const buf = Buffer.from(await coverFile.arrayBuffer());
+        const { error: upErr } = await supabase.storage
+          .from("covers")
+          .upload(cpath, buf, { contentType: coverFile.type || "image/jpeg", upsert: true });
+        if (upErr) throw new Error(upErr.message);
+        coverPath = cpath;
+        uploadedCover = cpath;
+      }
+
+      const tracks: { title: string; track_number: number; duration_seconds: number; storage_path: string }[] = [];
+      for (let i = 0; i < audioFiles.length; i++) {
+        const f = audioFiles[i];
+        const buf = Buffer.from(await f.arrayBuffer());
+        let duration = 0;
+        try {
+          const meta = await parseBuffer(buf);
+          duration = Math.round(meta.format.duration || 0);
+        } catch {
+          duration = 0;
+        }
+        const tn = trackNumberFromFilename(f.name, i + 1);
+        const ttitle = m === "Single" && title ? String(title) : trackTitleFromFilename(f.name);
+        const ext = extOf(f.name);
+        const spath = `audio/${albumId}/${String(tn).padStart(2, "0")}-${slug(ttitle)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("audio")
+          .upload(spath, buf, { contentType: f.type || "audio/mpeg", upsert: true });
+        if (upErr) throw new Error(upErr.message);
+        uploadedAudio.push(spath);
+        tracks.push({ title: ttitle, track_number: tn, duration_seconds: duration, storage_path: spath });
+      }
+
+      const finalAlbumTitle = m === "Single" ? String(title) : albumTitle;
+
+      const { data: albumRow, error: albumErr } = await supabase
+        .from("albums")
+        .insert({ id: albumId, title: finalAlbumTitle, release_year: releaseYear, cover_path: coverPath })
+        .select()
+        .single();
+      if (albumErr) throw new Error(albumErr.message);
+
+      const rows = tracks.map((t) => ({
+        album_id: albumRow.id,
+        title: t.title,
+        track_number: t.track_number,
+        duration_seconds: t.duration_seconds,
+        storage_path: t.storage_path,
+      }));
+      const { error: tracksErr } = await supabase.from("tracks").insert(rows);
+      if (tracksErr) throw new Error(tracksErr.message);
+
+      return NextResponse.json({ albumId: albumRow.id });
+    } catch (e: any) {
+      try {
+        if (uploadedCover) await supabase.storage.from("covers").remove([uploadedCover]);
+        if (uploadedAudio.length) await supabase.storage.from("audio").remove(uploadedAudio);
+        await supabase.from("albums").delete().eq("id", albumId);
+      } catch {}
+      return NextResponse.json({ error: e?.message || "Upload failed" }, { status: 500 });
+    }
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || "Upload failed (outer)" }, { status: 500 });
   }
 }
