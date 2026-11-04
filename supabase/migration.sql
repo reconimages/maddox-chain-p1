@@ -29,3 +29,8 @@ alter table public.tracks enable row level security;
 
 create policy "albums public read" on public.albums for select using (true);
 create policy "tracks public read" on public.tracks for select using (true);
+
+-- Storage: allow the (anonymous) server client to generate signed URLs.
+-- Buckets remain PRIVATE (public=false); raw URLs still require a signed token.
+create policy "audio read" on storage.objects for select using (bucket_id = 'audio');
+create policy "covers read" on storage.objects for select using (bucket_id = 'covers');
