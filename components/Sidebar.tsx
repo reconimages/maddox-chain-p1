@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Heart, ListMusic } from "lucide-react";
 
 export default function Sidebar({
   email,
@@ -36,6 +36,24 @@ export default function Sidebar({
       >
         Singles
       </Link>
+      {email && (
+        <>
+          <Link
+            href="/liked"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+            onClick={() => setOpen(false)}
+          >
+            <Heart className="h-4 w-4" /> Liked songs
+          </Link>
+          <Link
+            href="/playlists"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+            onClick={() => setOpen(false)}
+          >
+            <ListMusic className="h-4 w-4" /> Playlists
+          </Link>
+        </>
+      )}
       {isAdmin && (
         <Link
           href="/admin"
